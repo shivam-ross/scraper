@@ -1,16 +1,6 @@
 const TEAM_ID = "aline123";
 let knowledgeItems = [];
 
-function log(message, type = 'info') {
-    const colors = {
-        info: '\x1b[36m',
-        success: '\x1b[32m',
-        error: '\x1b[31m',
-        warn: '\x1b[33m',
-        reset: '\x1b[0m'
-    };
-    console.log(`${colors[type] || colors.info}[${new Date().toLocaleTimeString()}] ${message}${colors.reset}`);
-}
 
 function findAuthor(document, readabilityArticle) {
     if (readabilityArticle?.byline) {
@@ -64,8 +54,7 @@ function addKnowledgeItem(item) {
 
 module.exports = {
     TEAM_ID,
-    log,
     findAuthor,
-    knowledgeItems, // Export the array directly
+    knowledgeItems,
     addKnowledgeItem
 };

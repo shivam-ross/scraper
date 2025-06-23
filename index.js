@@ -1,7 +1,7 @@
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
 const { processSource } = require('./src/scraper');
-const { log, knowledgeItems, TEAM_ID } = require('./src/utils');
+const { knowledgeItems, TEAM_ID } = require('./src/utils');
 
 async function main() {
     const argv = yargs(hideBin(process.argv))
@@ -38,7 +38,7 @@ async function main() {
     if (knowledgeItems.length > 0) {
         console.log(JSON.stringify(finalJson, null, 2));
     } else {
-        log('No content could be extracted. Final output is empty.', 'error');
+        console.log('No content could be extracted. Final output is empty.', 'error');
     }
 }
 

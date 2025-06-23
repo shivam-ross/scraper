@@ -5,12 +5,11 @@ const TurndownService = require('turndown');
 const pdf = require('pdf-parse');
 const fs = require('fs');
 
-const { log, findAuthor, knowledgeItems, addKnowledgeItem } = require('./utils');
+const { findAuthor, knowledgeItems, addKnowledgeItem } = require('./utils');
 
 const turndownService = new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' });
 
 async function fetchHtml(url) {
-    log(`Fetching: ${url}`);
     try {
         const { data } = await axios.get(url, {
             headers: {
@@ -19,7 +18,7 @@ async function fetchHtml(url) {
         });
         return data;
     } catch (error) {
-        log(`Failed to fetch ${url}. Error: ${error.message}`, 'error');
+        console.log(`Failed to fetch ${url}. Error: ${error.message}`, 'error');
         return null;
     }
 }
@@ -59,11 +58,9 @@ function scrapeArticlePage(url, htmlContent) {
 
             if (headlineElement) {
                 finalTitle = headlineElement.textContent.trim();
-                log(`Found semantic H1 title: "${finalTitle}"`, 'info');
             }
 
             const author = findAuthor(document, article);
-            log(`Successfully parsed as article: ${finalTitle}`, 'success');
 
             const markdownContent = turndownService.turndown(article.content);
 
@@ -80,7 +77,7 @@ function scrapeArticlePage(url, htmlContent) {
 
         return false;
     } catch (error) {
-        log(`Error during parsing attempt at ${url}: ${error.message}`, 'error');
+        console.log(`Error during parsing attempt at ${url}: ${error.message}`, 'error');
         return false;
     }
 }
@@ -104,7 +101,6 @@ async function crawlAndScrape(baseUrl, htmlContent) {
     });
 
     if (links.size > 0) {
-        log(`Found ${links.size} potential article links. Processing...`);
         for (const link of Array.from(links)) {
             const linkHtml = await fetchHtml(link);
             if (linkHtml) {
@@ -112,22 +108,19 @@ async function crawlAndScrape(baseUrl, htmlContent) {
             }
         }
     } else {
-        log('No further article links found on this page.', 'info');
+        console.log('No further article links found on this page.', 'info');
     }
 }
 
 async function processPdf(filePath) {
-    log(`Loading PDF: ${filePath}`);
     try {
         if (!fs.existsSync(filePath)) {
-            log(`File not found: ${filePath}`, 'error');
             return;
         }
         const dataBuffer = fs.readFileSync(filePath);
         const data = await pdf(dataBuffer);
         const fullText = data.text;
-        
-        log(`PDF has ${data.numpages} pages. Analyzing text for first 8 chapters.`);
+
         const chapterRegex = /(?:CHAPTER|Chapter)\s+\d+[:\.\s\n]+([^\n]+)/g;
         const chapterLimit = 8;
         const chapters = fullText.split(chapterRegex);
@@ -135,7 +128,7 @@ async function processPdf(filePath) {
 
         if (chapters.length > 1) {
             const numChaptersFound = Math.floor(chapters.length / 2);
-            log(`Found ${numChaptersFound} chapters. Creating items for the first ${Math.min(numChaptersFound, chapterLimit)}.`, 'success');
+
             for (let i = 1; i < chapters.length && (i / 2) < chapterLimit; i += 2) {
                 const title = `Chapter ${Math.ceil(i / 2)}: ${chapters[i].trim()}`;
                 const content = chapters[i + 1].trim();
@@ -149,7 +142,6 @@ async function processPdf(filePath) {
                 });
             }
         } else {
-            log('Could not detect chapters. Importing the book as a single document.', 'warn');
             addKnowledgeItem({
                 title: filePath.split(/[\\/]/).pop(),
                 content: fullText.trim(),
@@ -160,7 +152,7 @@ async function processPdf(filePath) {
             });
         }
     } catch (error) {
-        log(`Error processing PDF: ${error.message}`, 'error');
+        console.log(`Error processing PDF: ${error.message}`, 'error');
     }
 }
 
@@ -171,7 +163,7 @@ async function processSource(argv) {
         if (html) {
             const wasScrapedAsArticle = scrapeArticlePage(url, html);
             if (!wasScrapedAsArticle) {
-                log(`Could not parse as a single article. Assuming it's an index page and starting crawl...`, 'warn');
+                console.log(`Could not parse as a single article. Assuming it's an index page and starting crawl...`, 'warn');
                 await crawlAndScrape(url, html);
             }
         }
